@@ -35,7 +35,6 @@
 import { mapGetters } from 'vuex'
 import Breadcrumb from '@/components/Breadcrumb'
 import Hamburger from '@/components/Hamburger'
-
 export default {
   components: {
     Breadcrumb,
@@ -51,8 +50,21 @@ export default {
     toggleSideBar() {
       this.$store.dispatch('app/toggleSideBar')
     },
+    getCookie(name) {
+      var arr; var reg = new RegExp('(^| )' + name + '=([^;]*)(;|$)')
+      if (arr === document.cookie.match(reg)) { return (arr[2]) } else { return null }
+    },
     async logout() {
-      await this.$store.dispatch('user/logout')
+      var exp = new Date()
+      exp.setTime(exp.getTime() - 1)
+      var cval1 = this.getCookie('userId')
+      var cval2 = this.getCookie('type')
+      if (cval1 != null) {
+        document.cookie = name + '=' + cval1 + ';expires=' + exp.toGMTString()
+      }
+      if (cval2 != null) {
+        document.cookie = name + '=' + cval2 + ';expires=' + exp.toGMTString()
+      }
       this.$router.push(`/login?redirect=${this.$route.fullPath}`)
     }
   }

@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
-    <el-col span="6">
-      <el-input v-model="searchInfo" placeholder="搜索" class="input-with-select" prefix-icon="el-icon-search" />
+    <el-col span="8">
+      <el-input clearable v-model="searchInfo" placeholder="根据名称进行模糊搜索（剩下的有时间再加吧(ToT)/~~~）"  class="input-with-select" prefix-icon="el-icon-search" />
     </el-col>
     <el-col span="2">
       <el-button icon="el-icon-search" redio type="primary" @click="searchFactory" />
@@ -65,7 +65,7 @@
     <el-dialog :visible.sync="dialogFormVisible">
       <el-form ref="form" :model="editForm" label-width="150px">
         <el-form-item label="工厂ID">
-          <el-input v-model="editForm.factoryId" />
+          <el-input v-model="editForm.factoryId" disabled/>
         </el-form-item>
 
         <el-form-item label="工厂名">
@@ -112,8 +112,7 @@ export default {
       editForm: {
         factoryId: null,
         factoryName: null,
-        information: null,
-        phoneNumber: null
+        information: null
       },
       dialogFormVisible: false,
       searchInfo: null,
@@ -146,13 +145,21 @@ export default {
       this.editForm = {
         factoryId: row.factoryId,
         factoryName: row.factoryName,
-        information: row.information,
-        phoneNumber: row.phoneNumber
+        information: row.information
       }
       this.dialogFormVisible = true
     },
     updateFactory() {
       this.dialogFormVisible = false
+      axios.get('factory/updateFactory?' +
+          'factoryId=' + this.editForm.factoryId + '&' +
+          'factoryName=' + this.editForm.factoryName + '&' +
+          'information=' + this.editForm.information
+      ).then(res => {
+        this.dialogFormVisible = false
+        this.fetchData()
+        this.$message({ type: 'success', message: '修改成功！' })
+      })
     },
     switchStatus(row) {
       if (row.status === 1) {
@@ -165,7 +172,7 @@ export default {
       })
     },
     searchFactory() {
-      axios.get('/factory/searchFactory?data=' + this.searchInfo)
+      axios.get('/factory/search?data=' + this.searchInfo)
         .then(res => {
           this.factoryList = res.data
           this.isAllFactory = false

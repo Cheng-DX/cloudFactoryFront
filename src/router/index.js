@@ -30,34 +30,7 @@ import Layout from '@/layout'
  * a base page that does not have permission requirements
  * all roles can be accessed
  */
-export const constantRoutes = [
-  {
-    path: '/login',
-    component: () => import('@/views/login/index'),
-    hidden: true
-  },
-  {
-    path: '/user/userList',
-    component: () => import('@/views/dashboard/index'),
-    hidden: true
-  },
-  {
-    path: '/404',
-    component: () => import('@/views/404'),
-    hidden: true
-  },
-
-  {
-    path: '/',
-    component: Layout,
-    redirect: '/dashboard',
-    children: [{
-      path: 'dashboard',
-      name: 'Dashboard',
-      component: () => import('@/views/dashboard/index'),
-      meta: { title: '首页', icon: 'dashboard' }
-    }]
-  },
+export const suAdminRoutes = [
 
   {
     path: '/example',
@@ -156,8 +129,80 @@ export const constantRoutes = [
         meta: { title: '兴师问罪', icon: 'link' }
       }
     ]
+  }
+]
+export const facAdminRoutes = [
+  {
+    path: '/facEquipment',
+    component: Layout,
+    children: [
+      {
+        path: 'index',
+        name: 'FacEquipment',
+        component: () => import('@/views/facEquipment/index'),
+        meta: { title: '我的设备', icon: 'form' }
+      }
+    ]
+  },
+  {
+    path: '/facOrder',
+    component: Layout,
+    redirect: '/facOrder/allOrder',
+    name: 'Example',
+    meta: { title: '订单', icon: 'el-icon-s-help' },
+    children: [
+      {
+        path: 'allOrder',
+        name: 'AllOrder',
+        component: () => import('@/views/facOrder/allOrder/index'),
+        meta: { title: '接单', icon: 'table' }
+      },
+      {
+        path: 'produce',
+        name: 'Produce',
+        component: () => import('@/views/facOrder/produce/index'),
+        meta: { title: '排产', icon: 'tree' }
+      }
+    ]
+  }
+]
+export const dealerRoutes = [
+  {
+    path: '/dealerOrders',
+    component: Layout,
+    children: [
+      {
+        path: 'index',
+        name: 'Index',
+        component: () => import('@/views/dealerOrders/index'),
+        meta: { title: '我的订单', icon: 'form' }
+      }
+    ]
+  }
+]
+export const constantRoutes = [
+  {
+    path: '/login',
+    component: () => import('@/views/login/index'),
+    hidden: true
+  },
+  {
+    path: '/404',
+    component: () => import('@/views/404'),
+    hidden: true
   },
 
+  {
+    path: '/',
+    component: Layout,
+    redirect: '/dashboard',
+    children: [{
+      path: 'dashboard',
+      name: 'Dashboard',
+      component: () => import('@/views/dashboard/index'),
+      meta: { title: '首页', icon: 'dashboard' }
+    }]
+  },
   // 404 page must be placed at the end !!!
   { path: '*', redirect: '/404', hidden: true }
 ]

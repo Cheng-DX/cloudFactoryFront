@@ -43,14 +43,14 @@
 
       <el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;" @click.native.prevent="handleLogin">登录</el-button>
 
-
     </el-form>
   </div>
 </template>
 
 <script>
 import { validUsername } from '@/utils/validate'
-
+import Cookies from 'js-cookie'
+import axios from 'axios'
 export default {
   name: 'Login',
   data() {
@@ -62,8 +62,8 @@ export default {
       }
     }
     const validatePassword = (rule, value, callback) => {
-      if (value.length < 6) {
-        callback(new Error('The password can not be less than 6 digits'))
+      if (value.length < 1) {
+        callback(new Error('The password can not be less than 1 digits'))
       } else {
         callback()
       }
@@ -102,24 +102,23 @@ export default {
       })
     },
     handleLogin() {
-      this.$refs.loginForm.validate(valid => {
-        if (valid) {
-          // start
-          //loginForm.username
-          // loginForm.password
-          // end
-          this.loading = true
-          this.$store.dispatch('user/login', this.loginForm).then(() => {
+      // start
+      // loginForm.username
+      // loginForm.password
+      // end
+      axios.get('user/login?account=' + this.loginForm.username + '&' + 'password=' + this.loginForm.password)
+        .then(res => {
+          if (res.data.result === 1) {
+            Cookies.set('userId', res.data.userId)
+            Cookies.set('type', res.data.type)
+            this.loading = true
             this.$router.push({ path: this.redirect || '/' })
             this.loading = false
-          }).catch(() => {
-            this.loading = false
-          })
-        } else {
-          console.log('error submit!!')
-          return false
-        }
-      })
+            this.$message.success('成功')
+          } else {
+            this.$message.error(res.data.message)
+          }
+        })
     }
   }
 }

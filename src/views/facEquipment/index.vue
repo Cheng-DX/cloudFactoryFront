@@ -4,16 +4,9 @@
     <el-col span="3">
       <el-button type="success" icon="el-icon-plus" redio @click="dialogFormVisibleOfAdd = true">添加设备</el-button>
     </el-col>
-    <el-col span="8">
-      <el-input v-model="searchInfo" placeholder="根据名称进行模糊搜索（剩下的有时间再加吧(ToT)/~~~）" class="input-with-select" prefix-icon="el-icon-search" />
+    <el-col span="3">
+      <el-button type="success" icon="el-icon-plus" redio @click="handleLease">租用设备</el-button>
     </el-col>
-    <el-col span="2">
-      <el-button icon="el-icon-search" redio type="primary" @click="searchEquipment" />
-    </el-col>
-    <el-col v-if="!isAllEquipment" span="3">
-      <el-button icon="el-icon-refresh-right" redio type="warning" @click="fetchData">显示全部</el-button>
-    </el-col>
-
     <el-table
       :data="equipmentList"
       border
@@ -60,23 +53,75 @@
       <el-table-column prop="leaseStatus" label="租用状态" align="center" width="100px">
         <template scope="scope">
           <el-tag v-if="scope.row.leaseStatus === 0" type="success"> 工厂设备 </el-tag>
-          <el-tag v-if="scope.row.leaseStatus === 1" type=""> 已被租用 </el-tag>
+          <el-tag v-if="scope.row.leaseStatus === 1" type=""> 租用中 </el-tag>
           <el-tag v-if="scope.row.leaseStatus === 2" type="warning">  未被租用 </el-tag>
         </template>
       </el-table-column>
 
-      <el-table-column label="操作" align="center" min-width="250px" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" min-width="300px" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button v-if="scope.row.equipmentStatus === 0" type="primary" icon="el-icon-edit" @click="switchStatus(scope.row)">远程开机</el-button>
           <el-button v-if="scope.row.equipmentStatus === 1" type="primary" icon="el-icon-edit" @click="switchStatus(scope.row)">远程关机</el-button>
-          <el-button type="success" icon="el-icon-edit" @click="handleEdit(scope.row)">修 改</el-button>
-          <el-button slot="reference" type="danger" icon="el-icon-delete" @click="deleteFun(scope.row)">删 除</el-button>
+          <el-button v-if="scope.row.leaseStatus === 0" type="success" icon="el-icon-edit" @click="handleEdit(scope.row)">修 改</el-button>
+          <el-button v-if="scope.row.leaseStatus === 0" type="success" @click="handleCapacity(scope.row.equipmentId)">配置产能</el-button>
+          <el-button v-if="scope.row.leaseStatus === 0" slot="reference" type="danger" icon="el-icon-delete" @click="deleteFun(scope.row)">删 除</el-button>
         </template>
       </el-table-column>
     </el-table>
 
-    <el-dialog :visible.sync="dialogFormVisibleOfAdd"  >
-      <el-form ref="form" :model="addForm" label-width="150px" >
+    <el-dialog :visible.sync="visibleOfLeasable">
+      <el-table
+        :data="leasableList"
+        border
+        style="width: 100%"
+        fit
+        highlight-current-row
+      >
+        <el-table-column
+          prop="equipmentId"
+          label="设备ID"
+          align="center"
+          width="80px"
+        />
+        <el-table-column
+          prop="name"
+          label="设备名称"
+          align="center"
+        />
+        <el-table-column prop="typeName" label="设备类型" align="center">
+          <template scope="scope">
+            <el-tag type="success" effect="dark"> {{ scope.row.typeName }} </el-tag>
+          </template>
+        </el-table-column>
+
+        <el-table-column
+          prop="specification"
+          label="设备规格"
+          align="center"
+        />
+        <el-table-column
+          prop="information"
+          label="设备描述"
+          align="center"
+        />
+        <el-table-column prop="leaseStatus" label="租用状态" align="center" width="100px">
+          <template scope="scope">
+            <el-tag v-if="scope.row.leaseStatus === 0" type="success"> 工厂设备 </el-tag>
+            <el-tag v-if="scope.row.leaseStatus === 1" type=""> 已被租用 </el-tag>
+            <el-tag v-if="scope.row.leaseStatus === 2" type="warning">  未被租用 </el-tag>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="操作" align="center" min-width="80px" class-name="small-padding fixed-width">
+          <template slot-scope="scope">
+            <el-button type="success" icon="el-icon-plus" @click="leaseEquipment(scope.row)">租用</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-dialog>
+
+    <el-dialog :visible.sync="dialogFormVisibleOfAdd">
+      <el-form ref="form" :model="addForm" label-width="150px">
         <el-form-item label="设备名称" required>
           <el-input v-model="addForm.name" />
         </el-form-item>
@@ -115,7 +160,7 @@
     <el-dialog :visible.sync="dialogFormVisible">
       <el-form ref="form" :model="editForm" label-width="150px">
         <el-form-item label="设备ID">
-          <el-input v-model="editForm.equipmentId" disabled/>
+          <el-input v-model="editForm.equipmentId" disabled />
         </el-form-item>
 
         <el-form-item label="设备名称">
@@ -154,7 +199,7 @@
 
 <script>
 import axios from 'axios'
-
+import Cookies from 'js-cookie'
 export default {
   filters: {
     statusFilter(status) {
@@ -169,6 +214,15 @@ export default {
   data() {
     return {
       equipmentList: [{
+        equipmentId: null,
+        specification: null,
+        name: null,
+        typeName: null,
+        information: null,
+        equipmentStatus: null,
+        leaseStatus: null
+      }],
+      leasableList: [{
         equipmentId: null,
         specification: null,
         name: null,
@@ -193,18 +247,23 @@ export default {
         equipmentStatus: null,
         leaseStatus: null
       },
+      addCapacityForm: {
+
+      },
       addForm: {
         specification: null,
         name: null,
         typeName: null,
         information: null,
-        userId: 1
+        userId: Cookies.get('userId')
       },
       dialogFormVisible: false,
       dialogFormVisibleOfAdd: false,
       searchInfo: null,
       searchByWhat: '',
-      isAllEquipment: true
+      isAllEquipment: true,
+      visibleOfLeasable: false,
+      addCapacityVisible: false
     }
   },
   created() {
@@ -221,10 +280,29 @@ export default {
     },
     fetchData() {
       this.listLoading = true
-      axios.get('/equipment/equipmentList').then(response => {
+      axios.get('/equipment/facEquipmentList?id=' + this.addForm.userId).then(response => {
         this.equipmentList = response.data
         this.listLoading = false
         this.isAllEquipment = true
+      })
+    },
+    leaseEquipment(row) {
+      axios.get('/equipment/leaseEquipment?id=' + row.equipmentId + '&userId=' + Cookies.get('userId'))
+        .then(res => {
+          this.$message.success('已租用')
+        })
+      this.fetchData()
+      this.fetchLeasable()
+    },
+    handleLease() {
+      this.fetchLeasable()
+      this.visibleOfLeasable = true
+    },
+    handleCapacity() {
+    },
+    fetchLeasable() {
+      axios.get('/equipment/leasableEquipmentList').then(response => {
+        this.leasableList = response.data
       })
     },
     clear() {
@@ -297,13 +375,6 @@ export default {
           } else {
             this.$message({ type: 'success', message: res.data.message })
           }
-        })
-    },
-    searchEquipment() {
-      axios.get('equipment/searchEquipment?data=' + this.searchInfo)
-        .then(res => {
-          this.equipmentList = res.data
-          this.isAllEquipment = false
         })
     }
   }
